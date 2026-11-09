@@ -1,0 +1,74 @@
+{
+  "id": "novanex_tyres",
+  "title": "Presiune Roti",
+  "description": "Presiune si temperatura in roti: cat sa umfli, corectat dupa cat de calde sunt anvelopele, pentru setul de vara sau de iarna",
+  "version": "1.0.0",
+  "vendor": "NOVANEX",
+  "loggingId": "OANX",
+  "iconGlyph": "gauge",
+  "mguHmi": ["ID7"],
+  "signals": {
+    "de.bmw.infotainment.vehicle.TPMS": {
+      "statusTyreTemperature": "rs",
+      "statusTyrePressure": "rs",
+      "statusTargetTyrePressure": "rs"
+    },
+    "de.bmw.infotainment.vehicle.Vehicle": {
+      "_optional": "the car's display units; without them the pressure unit is guessed from the values",
+      "statusNewCurrentUnitsStatusExt": "rs"
+    },
+    "de.bmw.infotainment.vehicle.Vehicle2": {
+      "statusCarSpeed2": "rs"
+    },
+    "de.bmw.infrastructure.EnvironmentalInformation": {
+      "ExteriorTemperature": "s"
+    }
+  },
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "canvas",
+      "title": "Presiune Roti",
+      "buttons": [
+        ["BTN_SET", "Schimba vara / iarna"],
+        ["BTN_SETTINGS", "Setari"]
+      ]
+    }
+  ],
+  "settings": [
+    {"key": "tyreSet", "label": "Set montat acum", "type": "choice", "default": "summer",
+     "options": [["summer", "Vara"], ["winter", "Iarna"]]},
+    {"key": "source", "label": "Presiunea recomandata din", "type": "choice", "default": "auto",
+     "options": [["auto", "Masina, altfel tabel (recomandat)"], ["car", "Masina (lista de anvelope din iDrive)"], ["table", "Tabel (site presiuni)"], ["manual", "Valori introduse de mine"]]},
+    {"key": "summerSize", "label": "Dimensiune anvelope vara", "type": "choice", "default": "s225_45r18",
+     "options": [["s225_40r19", "225/40 R19"], ["s225_40r19_255_35r19", "225/40 R19 + 255/35 R19"], ["s225_45r18", "225/45 R18"]],
+     "when": {"source": ["auto", "table"]}},
+    {"key": "winterSize", "label": "Dimensiune anvelope iarna", "type": "choice", "default": "s225_45r18",
+     "options": [["s225_40r19", "225/40 R19"], ["s225_40r19_255_35r19", "225/40 R19 + 255/35 R19"], ["s225_45r18", "225/45 R18"]],
+     "when": {"source": ["auto", "table"]}},
+    {"key": "winterAdd", "label": "Iarna: adauga la presiunea din tabel", "type": "number", "unit": "bar", "default": 0, "markDefault": true,
+     "steps": [0, 0.1, 0.2, 0.3], "when": {"source": ["auto", "table"]}},
+    {"key": "manSumF", "label": "Vara fata (la rece)", "type": "number", "unit": "bar", "default": 2.4,
+     "steps": [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5], "when": {"source": "manual"}},
+    {"key": "manSumR", "label": "Vara spate (la rece)", "type": "number", "unit": "bar", "default": 2.6,
+     "steps": [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5], "when": {"source": "manual"}},
+    {"key": "manWinF", "label": "Iarna fata (la rece)", "type": "number", "unit": "bar", "default": 2.4,
+     "steps": [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5], "when": {"source": "manual"}},
+    {"key": "manWinR", "label": "Iarna spate (la rece)", "type": "number", "unit": "bar", "default": 2.6,
+     "steps": [1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5], "when": {"source": "manual"}},
+    {"key": "margin", "label": "Anvelope reci sub (peste temperatura de afara)", "type": "number", "unit": "°C", "default": 5, "markDefault": true,
+     "steps": [3, 5, 8, 10]},
+    {"key": "refTemp", "label": "Presiunea la rece se refera la", "type": "choice", "default": "ambient",
+     "options": [["ambient", "Temperatura de afara (manual BMW)"], ["20", "20 °C fix"]]},
+    {"key": "unit", "label": "Unitate presiune", "type": "choice", "default": "bar",
+     "options": [["bar", "bar"], ["psi", "psi"], ["kpa", "kPa"]]},
+    {"key": "theme", "label": "Tema de culori", "type": "choice", "default": "m_tricolour",
+     "options": [["m_red", "M Red"], ["m_tricolour", "M Tricolour"], ["ice", "Ice White"], ["amber", "Night Amber"]]},
+    {"key": "layout", "label": "Asezare ecran", "type": "choice", "default": "full",
+     "options": [["full", "Ecran complet"], ["standard", "Standard"]]},
+    {"key": "renderer", "label": "Randare", "type": "choice", "default": "auto",
+     "options": [["auto", "GPU 60 fps (implicit)"], ["software", "Software"]]},
+    {"key": "demo", "label": "Date demo", "type": "choice", "default": "auto",
+     "options": [["auto", "Auto"], ["on", "Mereu"], ["off", "Niciodata"]]}
+  ]
+}
