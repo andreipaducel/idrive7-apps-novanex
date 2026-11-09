@@ -49,24 +49,27 @@ mgu.run({
 
         ui.onClick('BTN_ONOFF', () => { settings.set('on', settings.get('on') === false); return render(); });
 
-        /** The colour the preview should show for a frame, in the chosen engine mode. */
-        function previewColour(f, mode) {
+        /** The colour the preview should show for a frame. */
+        function previewColour(f) {
             if (!f) return null;
-            if (mode === 'full' && f.hue != null) return hueColour(f.hue);
+            if (f.hue != null) return hueColour(f.hue);
             if (f.slot != null) return SWATCH[(f.slot - 1) % 12];
             if (f.zones) { const z = f.zones.find((x) => x != null); return z != null ? hueColour(z) : null; }
-            return null;
+            return SWATCH[(Number(settings.get('colour')) || 1) - 1];   // breathe/strobe keep the base colour
         }
+
+        const keepOn = () => settings.get('keepSetting') !== false;
+        const runnable = (id) => (keepOn() ? ['cycle', 'mode'].indexOf(id) < 0 : true);
 
         function drawEffects(cv, t) {
             G.panel(cv, t, 24, 44, 520, 468, 'Efect');
-            const cur = settings.get('effect') || 'static', on = settings.get('on') !== false, full = settings.get('engine') === 'full';
+            const cur = settings.get('effect') || 'static', on = settings.get('on') !== false;
             EFFECTS.forEach(([id, name], i) => {
                 const y = 96 + i * 50;
-                const runnable = full || EFX.isSafe(id) || id === 'mode';
-                const label = name + (runnable ? '' : '  (mod Complet)');
+                const ok = runnable(id);
+                const label = name + (ok ? '' : '  (schimba setarea)');
                 G.button(cv, t, 48, y, 472, 42, label, () => { ambient.setEffect(id); return render(); },
-                    { primary: id === cur, busy: !runnable, key: 'fx-' + id });
+                    { primary: id === cur, busy: !ok, key: 'fx-' + id });
             });
             const y = 96 + EFFECTS.length * 50 + 6;
             G.button(cv, t, 48, y, 472, 48, on ? 'PORNIT' : 'OPRIT', () => { settings.set('on', !on); return render(); },
@@ -75,57 +78,60 @@ mgu.run({
 
         function drawPreview(cv, t) {
             G.panel(cv, t, 564, 44, 1012, 468, null);
-            const name = settings.get('effect') || 'static', on = settings.get('on') !== false;
-            const mode = settings.get('engine') === 'full' ? 'full' : 'safe';
+            const name = settings.get('effect') || 'static', on = settings.get('on') !== false, keep = keepOn();
             const nm = (EFFECTS.find((e) => e[0] === name) || [, name])[1];
             cv.text('PREVIEW', 596, 92, 22, t.dim, { font: 'bold', spacing: 2 });
-            cv.text(nm, 596, 140, 40, on ? t.text : t.dim, { font: 'bold' });
+            cv.text(nm + (keep ? '  ·  pastreaza setarea' : '  ·  schimba setarea'), 596, 140, 36, on ? t.text : t.dim, { font: 'bold' });
 
-            // the cabin strip: a rounded bar lit by the current frame (two zones for 'wave')
-            const bx = 596, by = 180, bw = 952, bh = 120;
+            // the cabin strip: a rounded bar lit by the current frame (zones for 'wave')
+            const bx = 596, by = 176, bw = 952, bh = 118;
             const tnow = Date.now();
             let f = null;
-            if (name === 'mode') f = { slot: ambient.slot() || 4 };
-            else { f = EFX.frame(name, tnow, cfg()); if (mode === 'safe') { f.hue = null; f.bright = null; f.zones = null; } }
-            const lit = on && (mode === 'full' || EFX.isSafe(name) || name === 'mode');
-            if (f && f.zones && mode === 'full') {
-                const n = f.zones.filter((x) => x != null).length || 3;
-                for (let z = 0; z < n; z++) {
-                    const col = hueColour(f.zones[z]); const seg = bw / n;
-                    cv.roundRect(bx + z * seg + 4, by, seg - 8, bh, 16, withAlpha(col, lit ? 0.9 : 0.15));
+            if (name === 'mode') f = keep ? null : { slot: ambient.slot() || 4, hue: null, bright: null, zones: null };
+            else {
+                f = EFX.frame(name, tnow, cfg());
+                if (f) {
+                    if (keep) { f.slot = null; if (name === 'breathe' || name === 'strobe') f.hue = null; }
+                    else { f.hue = null; f.zones = null; }
                 }
+            }
+            const ok = runnable(name), lit = on && ok && f;
+            if (f && f.zones) {
+                const n = f.zones.filter((x) => x != null).length || 3;
+                for (let z = 0; z < n; z++) { const seg = bw / n; cv.roundRect(bx + z * seg + 4, by, seg - 8, bh, 16, withAlpha(hueColour(f.zones[z]), lit ? 0.9 : 0.15)); }
             } else {
-                const col = previewColour(f, mode) || '#444a56';
-                const k = (mode === 'full' && f && f.bright != null) ? Math.max(0.12, f.bright / 254) : 0.9;
+                const col = previewColour(f) || '#444a56';
+                const k = (f && f.bright != null) ? Math.max(0.12, f.bright / 254) : 0.9;
                 cv.roundRect(bx, by, bw, bh, 18, withAlpha(col, lit ? k : 0.12));
             }
             cv.strokeRoundRect(bx, by, bw, bh, 18, 2, withAlpha('#ffffff', 0.12));
 
             // state line
-            let state;
-            if (!on) state = 'Oprit';
-            else if (!lit) state = 'Acest efect are nevoie de modul Complet';
-            else if (!ambient.available) state = 'Masina nu raspunde la lumina ambientala';
-            else if (ambient.error) state = 'Eroare la scriere: ' + ambient.error;
-            else state = 'Activ · scrie la masina';
-            const col = (!on || !lit) ? t.dim : (!ambient.available || ambient.error) ? t.warn : '#2fd27a';
-            cv.roundRect(bx, 328, bw, 44, 10, withAlpha(col, 0.16));
-            cv.text(state, bx + 16, 356, 24, col, { font: 'bold' });
+            let state, col;
+            if (!on) { state = 'Oprit'; col = t.dim; }
+            else if (!ok) { state = 'Acest efect schimba setarea: opreste "Pastreaza setarea BMW"'; col = t.warn; }
+            else if (!ambient.available) { state = 'Masina nu raspunde la lumina ambientala'; col = t.warn; }
+            else if (ambient.error) { state = 'Eroare la scriere: ' + ambient.error; col = t.warn; }
+            else { state = keep ? 'Activ · pastreaza setarea, schimba nuanta (experimental)' : 'Activ · schimba culoarea din setari'; col = '#2fd27a'; }
+            cv.roundRect(bx, 316, bw, 44, 10, withAlpha(col, 0.16));
+            cv.text(state, bx + 16, 344, 22, col, { font: 'bold' });
+
+            // the keep/set toggle
+            G.button(cv, t, bx, 378, 0, 44, keep ? 'PASTREAZA SETAREA BMW' : 'SCHIMBA SETAREA BMW',
+                () => { settings.set('keepSetting', !keep); return render(); }, { primary: keep, key: 'keep' });
 
             // swatches
-            cv.text('PALETA BMW (ilustrativ)', bx, 410, 20, t.dim, { font: 'bold', spacing: 1.5 });
-            for (let i = 0; i < 12; i++) {
-                const x = bx + i * 54;
-                cv.roundRect(x, 426, 44, 40, 8, SWATCH[i]);
-                cv.text(String(i + 1), x + 22, 494, 20, t.dim, { align: 'center' });
-            }
+            cv.text('PALETA BMW (ilustrativ)', bx, 450, 18, t.dim, { font: 'bold', spacing: 1.5 });
+            for (let i = 0; i < 12; i++) { const x = bx + i * 54; cv.roundRect(x, 462, 44, 34, 8, SWATCH[i]); cv.text(String(i + 1), x + 22, 510, 18, t.dim, { align: 'center' }); }
         }
 
         function cfg() {
             const pal = String(settings.get('palette') || '').split(',').map(Number).filter((n) => n >= 1 && n <= 12);
+            const colour = Number(settings.get('colour')) || 1;
             return {
                 periodMs: Math.max(400, (Number(settings.get('speed')) || 4) * 1000),
-                slot: Number(settings.get('colour')) || 1,
+                slot: colour,
+                hue: Math.round(((colour - 1) / 12) * 4095),
                 palette: pal.length ? pal : null,
                 brightMin: Number(settings.get('brightMin')) || 0,
                 brightMax: Number(settings.get('brightMax')) != null ? Number(settings.get('brightMax')) : 254,
@@ -138,8 +144,8 @@ mgu.run({
             const t = ctx.theme(), cv = ctx.canvas(W, H).clear(t.bg);
             drawEffects(cv, t);
             drawPreview(cv, t);
-            const warn = settings.get('engine') === 'full' ? { text: 'MOD COMPLET', color: t.warn } : null;
-            G.frame(cv, t, ['Lumini NOVANEX'], 0, [warn]);
+            const badge = keepOn() ? { text: 'PASTREAZA SETAREA', color: t.accent } : { text: 'SCHIMBA SETAREA', color: t.warn };
+            G.frame(cv, t, ['Lumini NOVANEX'], 0, [badge]);
             return ui.image('MAIN_GFX', cv);
         }
 

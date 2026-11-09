@@ -11,27 +11,27 @@ Lumina ambientală de pe G20 **nu e adresabilă pe fiecare LED**, ca o tastatur�
 - **Nu există un „wave” real** care curge LED cu LED. Cel mai apropiat e alternarea a 2–3 zone defazate (`Wave`), și doar dacă mașina e pe modul Individual.
 - Efectele sunt **pe timp**, pentru tot habitaclul: se schimbă culoarea și/sau luminozitatea în timp (respirație, ciclu, rainbow).
 
-## Cele două moduri ale motorului
+## „Păstrează setarea BMW” vs „Schimbă setarea”
 
-Singurul lucru garantat pe G20 (dovedit de aplicația standard) e **schimbarea culorii pe sloturi**. Restul câmpurilor (nuanță fină, luminozitate, zone) nu sunt încă verificate pe mașină. De aceea aplicația are două moduri:
+Asta e alegerea importantă (butonul mare din dreapta, sau Setări → „Păstrează setarea BMW”):
 
-| Mod | Ce scrie | Efecte disponibile |
-|---|---|---|
-| **Sigur** (implicit) | doar sloturile paletei BMW | Statică, Ciclu culori, Rainbow (ca parcurgere a paletei), Urmează modul |
-| **Complet** (experimental) | și nuanța, luminozitatea și zonele | toate, inclusiv Respirație, Strobe, Wave, Rainbow lin |
+- **Păstrează setarea BMW** (implicit) — aplicația **nu atinge culoarea salvată în meniul BMW** (ex. portocaliu). Schimbă doar **nuanța afișată** (sau luminozitatea). Când oprești efectul, mașina rămâne pe culoarea ta. Asta e ce vrei dacă nu vrei să ți se mute setarea.
+- **Schimbă setarea** — efectul mută chiar **slotul de culoare din meniul BMW** (paleta 1–12). E singura cale **dovedită** că merge pe G20, dar îți schimbă setarea salvată.
 
-În modul Sigur, efectele care au nevoie de luminozitate/nuanță apar gri, cu „(mod Complet)”. Nimic neverificat nu se scrie la mașină.
+**Important, de testat:** „Păstrează setarea” scrie pe câmpul de **nuanță**, pe care ecosistemul MGU **nu l-a verificat încă pe G20** — se poate ca mașina să-l ignore și să nu se vadă nimic. Dacă pe „Păstrează setarea” nu se schimbă nimic, mașina ta nu expune controlul de nuanță live, iar singura variantă care mișcă efectiv culorile e „Schimbă setarea” (care îți mută slotul). Nu e un bug în aplicație — atât lasă mașina.
 
-**Testează modul Complet cu mașina oprită**, prima dată. Dacă respirația/strobe nu fac nimic sau se comportă ciudat, mașina ta nu acceptă acele câmpuri — rămâi pe Sigur. Nu riști nimic permanent: efectul doar trimite culori, exact ca meniul BMW; se oprește din butonul **Pornit/Oprit** sau ștergând aplicația.
+În modul „Păstrează setarea”, **Ciclu culori** și **Urmează modul** apar gri cu „(schimbă setarea)”, pentru că ele funcționează doar mutând slotul.
+
+**Testează cu mașina oprită.** Nu riști nimic permanent: aplicația doar trimite culori, exact ca meniul BMW; se oprește din **Pornit/Oprit** sau ștergând aplicația. Respirația/Strobe modifică doar luminozitatea și păstrează culoarea.
 
 ## Efecte
 
 - **Statică** — o culoare fixă din paletă.
 - **Ciclu culori** — parcurge culorile alese (ex. `1,4,7`) sau toate 12. Garantat pe orice mașină.
-- **Rainbow** — parcurge spectrul. În modul Sigur merge prin paletă; în Complet, nuanță lină.
-- **Respirație** — o culoare care crește și scade în intensitate (mod Complet).
-- **Strobe** — clipește; `cat sta aprins` reglează raportul (mod Complet).
-- **Wave (zone)** — 2–3 zone defazate (mod Complet, mașina pe Individual).
+- **Rainbow** — parcurge spectrul. Pe „Păstrează setarea” schimbă nuanța; pe „Schimbă setarea” parcurge paleta BMW.
+- **Respirație** — culoarea crește și scade în intensitate (schimbă doar luminozitatea, păstrează culoarea).
+- **Strobe** — clipește; `cat sta aprins` reglează raportul.
+- **Wave (zone)** — 2–3 zone defazate (mașina pe Individual).
 - **Urmează modul de condus** — culoare pe mod (Sport, Comfort, Eco Pro, Adaptive), ca aplicația standard.
 
 **Durata unui ciclu** reglează viteza. **Scrie cel mult o dată la** limitează cât de des se trimite la mașină.
@@ -51,7 +51,7 @@ Lumina ambientală e o funcție de confort, nu un ecran. Scrisul prea des **înc
 node tools/novanex_ambient/test_effects.js     # motorul de efecte: 16 teste
 node tools/novanex_ambient/test_ambient.js      # logica de scriere: 8 teste
 # previzualizare aproximativa a ecranului (fonturi diferite de cele din masina):
-node tools/novanex_ambient/layout_preview.js 1500 ops.json effect=rainbow engine=full
+node tools/novanex_ambient/layout_preview.js 1500 ops.json effect=rainbow keepSetting=true
 python3 tools/novanex_ambient/draw_ops.py ops.json ecran.png
 ```
 

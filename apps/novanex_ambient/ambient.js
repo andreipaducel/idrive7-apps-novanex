@@ -51,12 +51,19 @@ function modeOf(raw) {
 /**
  * Build the struct. A frame from effects.js says what to change; everything else is left as it is with
  * the "leave" sentinels the stock app uses (hue 4095, layers 255, brightness 255, modes unfilled).
+ *
+ * keep = true: never touch the saved menu colour (controlMenu stays UNFILLED), so the car keeps the
+ *              colour the driver chose in BMW's menu; the effect changes only the hue / brightness /
+ *              zones that are shown. This is what "keep my setting, just animate the colour" needs -
+ *              but driving the hue field is UNVERIFIED on a G20 (the car may ignore it).
+ * keep = false: the effect may select a palette slot (controlMenu = FARBAUSWAHL_n). That is the proven
+ *               path, but it changes the colour selected in BMW's own menu.
  */
-function request(frame, mode) {
-    const slot = frame.slot;
-    const hue = mode === 'full' && frame.hue != null ? frame.hue : null;
-    const bright = mode === 'full' && frame.bright != null ? frame.bright : null;
-    const zones = mode === 'full' && frame.zones ? frame.zones : null;
+function request(frame, keep) {
+    const slot = keep ? null : frame.slot;
+    const hue = frame.hue != null ? frame.hue : null;
+    const bright = frame.bright != null ? frame.bright : null;
+    const zones = frame.zones ? frame.zones : null;
     return {
         controlMenuAmbientePanoramicRoofInteriorLighting: slot != null ? 'FARBAUSWAHL_' + slot : UNFILLED,
         controlModeAmbientePanoramicRoofInteriorLighting: UNFILLED,
@@ -71,8 +78,8 @@ function request(frame, mode) {
 }
 
 /** A short signature so we never re-send an identical frame. */
-function sig(frame, mode) {
-    const r = request(frame, mode);
+function sig(frame, keep) {
+    const r = request(frame, keep);
     return [r.controlMenuAmbientePanoramicRoofInteriorLighting, r.controlHueInteriorLighting, r.controlBrightnessValueBrightnessOffsetAmbientePanoramicRoofInteriorLighting,
         r.controlHueValueLayer1IndividualGroup, r.controlHueValueLayer2IndividualGroup, r.controlHueValueLayer3IndividualGroup].join('|');
 }
@@ -101,10 +108,19 @@ class Ambient extends EventEmitter {
     own() { return this._own; }
     mode() { return this._mode; }
     effect() { return this.settings.get('effect') || 'static'; }
-    engineMode() { return this.settings.get('engine') === 'full' ? 'full' : 'safe'; }
+    /** keep = don't change the saved BMW colour; animate the hue/brightness instead (default). */
+    keepSetting() { return this.settings.get('keepSetting') !== false; }
     running() { return this.settings.get('on') !== false && this.effect() !== 'off'; }
-    /** An effect the current engine mode can actually run. */
-    effectRunnable(name) { return this.engineMode() === 'full' || EFX.isSafe(name); }
+    /**
+     * Can this effect run in the current mode?
+     *   keep mode : effects that change colour by SLOT only (cycle, mode-follow) can't run - they would
+     *               have to change the saved setting. Everything that drives hue/brightness/zones can.
+     *   set mode  : everything runs (colour by slot is allowed).
+     */
+    effectRunnable(name) {
+        if (!this.keepSetting()) return true;
+        return ['cycle', 'mode'].indexOf(name) < 0;
+    }
 
     async start() {
         const light = await this.signals.watch(LIGHT, '1', { statusAmbientLightInteriorColour: (v) => this._status(v) }, this.log);
@@ -133,14 +149,15 @@ class Ambient extends EventEmitter {
         this.emit('change');
     }
 
-    /** Effect config from settings. */
+    /** Effect config from settings. In keep mode the chosen colour 1..12 becomes a hue. */
     cfg() {
         const s = this.settings;
         const pal = String(s.get('palette') || '').split(',').map((x) => Number(x)).filter((n) => n >= 1 && n <= SLOTS);
+        const colour = Number(s.get('colour')) || 1;
         return {
             periodMs: Math.max(400, (Number(s.get('speed')) || 4) * 1000),
-            slot: Number(s.get('colour')) || 1,
-            hue: Number(s.get('hue')),
+            slot: colour,
+            hue: Math.round(((colour - 1) / SLOTS) * EFX.HUE_MAX),   // the base colour as a hue, for keep mode
             palette: pal.length ? pal : null,
             brightMin: Number(s.get('brightMin')) || 0,
             brightMax: Number(s.get('brightMax')) != null ? Number(s.get('brightMax')) : 254,
@@ -149,20 +166,30 @@ class Ambient extends EventEmitter {
         };
     }
 
-    /** The slot/frame to show right now. */
+    /** The frame to show right now. */
     _frame() {
         const name = this.effect();
-        if (name === 'mode') {                               // follow the driving mode
+        const keep = this.keepSetting();
+        if (name === 'mode') {                               // follow the driving mode (changes the slot)
+            if (keep) return null;
             const key = this._mode && MODE_SLOT[this._mode];
             const n = key ? Number(this.settings.get(key)) || 0 : 0;
             if (n >= 1 && n <= SLOTS) return { slot: n, hue: null, bright: null, zones: null };
             if (this._own) return { slot: this._own, hue: null, bright: null, zones: null };
             return null;
         }
-        if (!this.effectRunnable(name)) return null;         // unproven effect blocked in safe mode
+        if (!this.effectRunnable(name)) return null;
         const f = EFX.frame(name, this.now() - this._t0, this.cfg());
         if (!f) return null;
-        if (this.engineMode() === 'safe') { f.hue = null; f.bright = null; f.zones = null; }  // slots only
+        if (keep) {
+            // keep the saved colour: never a slot. Colour effects use hue; brightness effects
+            // (breathe/strobe) leave the hue alone so the car keeps showing the chosen colour.
+            f.slot = null;
+            if (['breathe', 'strobe'].indexOf(name) >= 0) f.hue = null;
+        } else {
+            // change the setting by slot: colour comes from the slot, not the hue/zones
+            f.hue = null; f.zones = null;
+        }
         return f;
     }
 
@@ -182,12 +209,12 @@ class Ambient extends EventEmitter {
         if (!this.running()) return;
         const f = this._frame();
         if (!f) return;
-        const mode = this.engineMode();
-        const s = sig(f, mode);
+        const keep = this.keepSetting();
+        const s = sig(f, keep);
         // nothing new to send, unless the car drifted to a different slot (someone changed it by hand)
         const drifted = f.slot != null && this._slot != null && this._slot !== f.slot;
         if (s === this._lastSig && !drifted) return;
-        this._want = { f, mode, s };
+        this._want = { f, keep, s };
         this._drain();
     }
 
@@ -195,13 +222,13 @@ class Ambient extends EventEmitter {
         if (this._busy || !this._want) return;
         const wait = this._last + MIN_GAP_MS - this.now();
         if (wait > 0) { if (!this._gap) this._gap = setTimeout(() => { this._gap = null; this._drain(); }, wait); return; }
-        const { f, mode, s } = this._want;
+        const { f, keep, s } = this._want;
         this._want = null;
         if (!this._proxy) { this.log.warn('ambient: the car\'s ambient light does not answer'); return; }
         this._busy = true;
         this._last = this.now();
         this._lastSig = s;
-        Promise.resolve().then(() => this.signals.set(this._proxy, 'ambientLightInteriorColour', request(f, mode)))
+        Promise.resolve().then(() => this.signals.set(this._proxy, 'ambientLightInteriorColour', request(f, keep)))
             .then(() => { this.error = null; }, (e) => { this.error = String(e && e.message || e); this.log.warn('ambient set: ' + this.error); })
             .then(() => { this._busy = false; this.emit('change'); this._drain(); });
     }
