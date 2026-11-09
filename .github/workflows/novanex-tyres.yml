@@ -1,0 +1,20 @@
+# Presiune Roti: the pressure logic tests, on the head unit's Node version and a current one.
+name: novanex-tyres
+on:
+  push:
+    paths: ['apps/novanex_tyres/**', 'tools/novanex_tyres/**', '.github/workflows/novanex-tyres.yml']
+  pull_request:
+    paths: ['apps/novanex_tyres/**', 'tools/novanex_tyres/**']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['8.16.2', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node tools/novanex_tyres/test_advisor.js
+      - run: for f in apps/novanex_tyres/*.js; do node --check "$f"; done

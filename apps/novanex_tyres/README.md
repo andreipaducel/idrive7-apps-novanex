@@ -40,16 +40,10 @@ Scriptul scrie `pressures.js` și actualizează lista de dimensiuni din Setări.
 
 ## Cum o pui în Store
 
-Aplicația e făcută pe kit-ul din [idrive7-apps](https://github.com/cauliflowermossgrape/idrive7-apps). Repo-ul acela e deja o sursă implicită în MGU Store, iar `mgu-repo.json`-ul lui ia automat orice folder din `apps/`.
+1. În mașină: Store → Settings → **Add source** → `techechanter/idrive7-apps-novanex` → branch `main`.
+2. „Presiune Roti" apare în Store. Apeși Install, iar unitatea o compilează singură.
 
-**Doar pentru mașina ta (imediat):**
-
-1. Faci fork la `cauliflowermossgrape/idrive7-apps` pe GitHub.
-2. Copiezi în fork folderele `apps/novanex_tyres/` și `tools/novanex_tyres/` din arhiva asta, apoi faci commit și push.
-3. În mașină: Store → Settings → **Add source** → `contul-tau/idrive7-apps` → branch `main`.
-4. „Presiune Roti" apare în Store. Install, iar unitatea o compilează singură.
-
-**Pentru toată lumea:** deschizi un Pull Request cu cele două foldere către `cauliflowermossgrape/idrive7-apps`. După merge, aplicația apare în Store-ul oricui, fiindcă e sursă implicită.
+Aplicația e făcută pe kit-ul din [idrive7-apps](https://github.com/cauliflowermossgrape/idrive7-apps). Ca să apară la toată lumea, poți trimite un Pull Request cu `apps/novanex_tyres/` și `tools/novanex_tyres/` către repo-ul acela, care e sursă implicită în Store.
 
 ## Teste și previzualizare (pe PC, fără mașină)
 
