@@ -66,9 +66,10 @@ const EFFECTS = {
             return { slot: baseSlot(cfg), hue: baseHue(cfg), bright: lerpBright(cfg, k), zones: null };
         },
     },
-    // smooth hue sweep (full mode) or stepping the palette (safe mode); ambient.js picks which
+    // stepping the palette (safe mode, proven) or a smooth hue sweep (full mode); ambient.js picks which.
+    // Marked slot-capable so it runs in safe mode too - the frame always carries a valid palette slot.
     rainbow: {
-        needs: ['slot', 'hue'],
+        needs: ['slot'],
         frame(t, cfg) {
             const hue = Math.round(frac(phaseOf(t, cfg.periodMs)) * HUE_MAX) % (HUE_MAX + 1);
             return { slot: paletteStep(cfg, phaseOf(t, cfg.periodMs)), hue, bright: null, zones: null };

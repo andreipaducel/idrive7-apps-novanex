@@ -76,10 +76,16 @@ const checks = [
         const f2 = E.frame('wave', 0, { periodMs: 3000, zones: 2 });
         assert.strictEqual(f2.zones[2], null, 'third zone unused when zones=2');
     }],
-    ['needs/isSafe: cycle & static are slot-only; breathe/rainbow/wave are not', () => {
-        assert.ok(E.isSafe('static')); assert.ok(E.isSafe('cycle'));
-        assert.ok(!E.isSafe('breathe')); assert.ok(!E.isSafe('rainbow')); assert.ok(!E.isSafe('wave'));
+    ['needs/isSafe: static, cycle & rainbow run on slots; breathe/strobe/wave need full mode', () => {
+        assert.ok(E.isSafe('static')); assert.ok(E.isSafe('cycle')); assert.ok(E.isSafe('rainbow'));
+        assert.ok(!E.isSafe('breathe')); assert.ok(!E.isSafe('strobe')); assert.ok(!E.isSafe('wave'));
         assert.deepStrictEqual(E.needs('breathe'), ['slot', 'bright']);
+    }],
+    ['rainbow in safe mode steps real palette slots over time', () => {
+        const cfg = { slot: 1, periodMs: 1200 };
+        const slots = new Set();
+        for (let t = 0; t < 1200; t += 100) slots.add(E.frame('rainbow', t, cfg).slot);
+        assert(slots.size >= 4, 'rainbow barely changed slots: ' + slots.size);
     }],
     ['curves stay within 0..1', () => {
         for (let p = 0; p <= 1.001; p += 0.05) {
