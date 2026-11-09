@@ -1,0 +1,21 @@
+# Presiune Roti: the pressure logic tests, on the head unit's Node version and a current one.
+name: novanex-ambient
+on:
+  push:
+    paths: ['apps/novanex_ambient/**', 'tools/novanex_ambient/**', '.github/workflows/novanex-ambient.yml']
+  pull_request:
+    paths: ['apps/novanex_ambient/**', 'tools/novanex_ambient/**']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['8.16.2', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: node tools/novanex_ambient/test_effects.js
+      - run: node tools/novanex_ambient/test_ambient.js
+      - run: for f in apps/novanex_ambient/*.js; do node --check "$f"; done

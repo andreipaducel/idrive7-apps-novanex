@@ -1,0 +1,65 @@
+{
+  "id": "novanex_ambient",
+  "title": "Lumini NOVANEX",
+  "description": "Efecte pentru lumina ambientala: statica, rainbow, respiratie, strobe si altele, cu viteza si culoare reglabile",
+  "version": "1.0.0",
+  "vendor": "NOVANEX",
+  "loggingId": "OANA",
+  "iconGlyph": "ambient",
+  "autostart": true,
+  "signals": {
+    "de.bmw.infotainment.misc.ComfortFunctionIuK": {
+      "ambientLightInteriorColour": "w",
+      "statusAmbientLightInteriorColour": "rs"
+    },
+    "de.bmw.infotainment.drivingexcitement.FES": {
+      "_optional": "driving mode, for Urmeaza modul",
+      "statusFESVehicleDynamicSwitchHMI": "rs"
+    }
+  },
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "canvas",
+      "title": "Lumini NOVANEX",
+      "buttons": [
+        ["BTN_ONOFF", "Pornit / Oprit"],
+        ["BTN_SETTINGS", "Setari"]
+      ]
+    }
+  ],
+  "settings": [
+    {"key": "on", "label": "Efect pornit", "type": "bool", "default": true},
+    {"key": "effect", "label": "Efect", "type": "choice", "default": "static",
+     "options": [["static", "Statica"], ["cycle", "Ciclu culori"], ["rainbow", "Rainbow"], ["breathe", "Respiratie"], ["strobe", "Strobe"], ["wave", "Wave (zone)"], ["mode", "Urmeaza modul de condus"]]},
+    {"key": "engine", "label": "Mod motor", "type": "choice", "default": "safe",
+     "options": [["safe", "Sigur (doar paleta BMW)"], ["full", "Complet (nuanta + luminozitate, experimental)"]]},
+    {"key": "speed", "label": "Durata unui ciclu", "type": "number", "unit": "s", "default": 4,
+     "steps": [1, 2, 3, 4, 6, 8, 10, 15, 20, 30], "group": "Reglaje efect"},
+    {"key": "gapMs", "label": "Scrie cel mult o data la", "type": "number", "unit": "ms", "default": 400,
+     "steps": [250, 300, 400, 500, 750, 1000, 1500], "markDefault": true, "group": "Reglaje efect"},
+    {"key": "colour", "label": "Culoare (Statica / Respiratie / Strobe)", "type": "number", "default": 1,
+     "steps": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "group": "Reglaje efect",
+     "when": {"effect": ["static", "breathe", "strobe"]}},
+    {"key": "palette", "label": "Culori pentru Ciclu (ex. 1,4,7)", "type": "text", "default": "", "placeholder": "gol = toate 12",
+     "group": "Reglaje efect", "when": {"effect": "cycle"}},
+    {"key": "brightMin", "label": "Luminozitate minima", "type": "number", "default": 0, "steps": [0, 20, 40, 60, 80, 100],
+     "group": "Luminozitate (mod Complet)", "when": {"engine": "full", "effect": ["breathe", "strobe"]}},
+    {"key": "brightMax", "label": "Luminozitate maxima", "type": "number", "default": 254, "steps": [100, 140, 180, 220, 254],
+     "group": "Luminozitate (mod Complet)", "when": {"engine": "full", "effect": ["breathe", "strobe"]}},
+    {"key": "duty", "label": "Strobe: cat sta aprins", "type": "number", "unit": "%", "default": 50, "steps": [10, 20, 30, 50, 70, 90],
+     "group": "Luminozitate (mod Complet)", "when": {"engine": "full", "effect": "strobe"}},
+    {"key": "zones", "label": "Wave: numar de zone", "type": "number", "default": 3, "steps": [2, 3],
+     "group": "Luminozitate (mod Complet)", "when": {"engine": "full", "effect": "wave"}},
+    {"key": "sportSlot", "label": "Sport", "type": "number", "default": 0, "steps": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+     "labels": {"0": "Nu schimba"}, "group": "Urmeaza modul de condus", "when": {"effect": "mode"}},
+    {"key": "comfortSlot", "label": "Comfort", "type": "number", "default": 0, "steps": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+     "labels": {"0": "Nu schimba"}, "group": "Urmeaza modul de condus", "when": {"effect": "mode"}},
+    {"key": "ecoSlot", "label": "Eco Pro", "type": "number", "default": 0, "steps": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+     "labels": {"0": "Nu schimba"}, "group": "Urmeaza modul de condus", "when": {"effect": "mode"}},
+    {"key": "adaptiveSlot", "label": "Adaptive", "type": "number", "default": 0, "steps": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+     "labels": {"0": "Nu schimba"}, "group": "Urmeaza modul de condus", "when": {"effect": "mode"}},
+    {"key": "theme", "label": "Tema de culori", "type": "choice", "default": "m_tricolour",
+     "options": [["m_red", "M Red"], ["m_tricolour", "M Tricolour"], ["ice", "Ice White"], ["amber", "Night Amber"]]}
+  ]
+}

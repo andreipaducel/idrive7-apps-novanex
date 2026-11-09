@@ -5,8 +5,10 @@ Aplicațiile NOVANEX pentru unitatea iDrive 7 (MGU), instalabile din [MGU Store]
 | Aplicație | Ce face |
 |---|---|
 | [**Presiune Roti**](apps/novanex_tyres/README.md) | Presiunea și temperatura în fiecare roată. Arată cât să umfli sau să scoți, corectat după cât de calde sunt anvelopele, pentru setul de vară sau de iarnă. |
+| [**Lumini NOVANEX**](apps/novanex_ambient/README.md) | Efecte pentru lumina ambientală: statică, ciclu culori, rainbow, respirație, strobe, wave și urmează modul de condus. |
 
 ![Presiune Roti](apps/novanex_tyres/preview.png)
+![Lumini NOVANEX](apps/novanex_ambient/preview.png)
 
 ## Instalare
 
