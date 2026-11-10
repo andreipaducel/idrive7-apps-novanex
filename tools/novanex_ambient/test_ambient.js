@@ -31,11 +31,16 @@ const tests = [
         assert.strictEqual(w.controlHueInteriorLighting, 4095, 'hue left alone');
         assert.strictEqual(w.controlBrightnessValueBrightnessOffsetAmbientePanoramicRoofInteriorLighting, 255, 'brightness left alone');
     }],
-    ['keep mode NEVER writes the menu slot (the saved colour stays)', async () => {
+    ['keep mode never SELECTS a different slot: it holds the car\'s current one', async () => {
         for (const fx of ['static', 'rainbow', 'breathe', 'strobe', 'wave']) {
             const h = harness({ keepSetting: true, effect: fx, colour: 1, speed: 4, brightMin: 10, brightMax: 200 });
-            await h.a.start(); await flush(); await flush();
-            for (const w of h.writes) assert.strictEqual(w.controlMenuAmbientePanoramicRoofInteriorLighting, 'SIGNAL_UNBEFUELLT', fx + ' changed the saved slot');
+            await h.a.start();
+            h.a._slot = 3;                       // the car is on slot 3 (e.g. Orange)
+            h.clock.adv(2000); h.a._writeNow(); await flush();
+            for (const w of h.writes) {
+                const m = w.controlMenuAmbientePanoramicRoofInteriorLighting;
+                assert.ok(m === 'SIGNAL_UNBEFUELLT' || m === 'FARBAUSWAHL_3', fx + ' selected a different slot: ' + m);
+            }
         }
     }],
     ['keep mode blocks cycle and mode-follow (they change the setting)', async () => {
@@ -92,9 +97,9 @@ const tests = [
         assert.strictEqual(r.controlModeAmbientePanoramicRoofInteriorLighting, 'SIGNAL_UNBEFUELLT');
         assert.strictEqual(r.controlHueValueLayer1IndividualGroup, 255);
     }],
-    ['request() in keep mode drops the slot even if the frame has one', () => {
-        const r = request({ slot: 9, hue: 2000, bright: null, zones: null }, true);
-        assert.strictEqual(r.controlMenuAmbientePanoramicRoofInteriorLighting, 'SIGNAL_UNBEFUELLT');
+    ['request() writes the slot the frame carries, plus the hue', () => {
+        const r = request({ slot: 3, hue: 2000, bright: null, zones: null });
+        assert.strictEqual(r.controlMenuAmbientePanoramicRoofInteriorLighting, "FARBAUSWAHL_3");
         assert.strictEqual(r.controlHueInteriorLighting, 2000);
     }],
     ['wave writes zone hues', () => {

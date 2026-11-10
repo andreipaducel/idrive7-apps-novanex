@@ -2,7 +2,7 @@
   "id": "novanex_ambient",
   "title": "Lumini NOVANEX",
   "description": "Efecte pentru lumina ambientala: statica, rainbow, respiratie, strobe si altele, cu viteza si culoare reglabile",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "vendor": "NOVANEX",
   "loggingId": "OANA",
   "iconGlyph": "ambient",
@@ -30,7 +30,7 @@
   ],
   "settings": [
     {"key": "on", "label": "Efect pornit", "type": "bool", "default": true},
-    {"key": "effect", "label": "Efect", "type": "choice", "default": "static",
+    {"key": "effect", "label": "Efect", "type": "choice", "default": "rainbow",
      "options": [["static", "Statica"], ["cycle", "Ciclu culori"], ["rainbow", "Rainbow"], ["breathe", "Respiratie"], ["strobe", "Strobe"], ["wave", "Wave (zone)"], ["mode", "Urmeaza modul de condus"]]},
     {"key": "keepSetting", "label": "Pastreaza setarea BMW (schimba doar culoarea afisata, experimental)", "type": "bool", "default": true},
     {"key": "speed", "label": "Durata unui ciclu", "type": "number", "unit": "s", "default": 4,

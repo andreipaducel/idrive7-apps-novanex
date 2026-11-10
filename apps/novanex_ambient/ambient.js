@@ -59,8 +59,8 @@ function modeOf(raw) {
  * keep = false: the effect may select a palette slot (controlMenu = FARBAUSWAHL_n). That is the proven
  *               path, but it changes the colour selected in BMW's own menu.
  */
-function request(frame, keep) {
-    const slot = keep ? null : frame.slot;
+function request(frame) {
+    const slot = frame.slot;   // _frame decides: the car's CURRENT slot in keep mode (no change), the effect's slot in set mode
     const hue = frame.hue != null ? frame.hue : null;
     const bright = frame.bright != null ? frame.bright : null;
     const zones = frame.zones ? frame.zones : null;
@@ -182,10 +182,11 @@ class Ambient extends EventEmitter {
         const f = EFX.frame(name, this.now() - this._t0, this.cfg());
         if (!f) return null;
         if (keep) {
-            // keep the saved colour: never a slot. Colour effects use hue; brightness effects
-            // (breathe/strobe) leave the hue alone so the car keeps showing the chosen colour.
-            f.slot = null;
-            if (['breathe', 'strobe'].indexOf(name) >= 0) f.hue = null;
+            // keep the driver's saved colour SELECTION: re-assert the slot the car is already on (same
+            // value = no change), and drive the hue over it. If the car honours the hue field we get the
+            // effect without moving the selection; if not, the light just stays on the chosen colour.
+            f.slot = (this._slot != null ? this._slot : (this._own != null ? this._own : null));
+            if (['breathe', 'strobe'].indexOf(name) >= 0) f.hue = null;   // brightness effects keep the colour
         } else {
             // change the setting by slot: colour comes from the slot, not the hue/zones
             f.hue = null; f.zones = null;
