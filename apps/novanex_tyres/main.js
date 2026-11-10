@@ -108,11 +108,16 @@ mgu.run({
 
         /* ---------- recommended cold pressures ---------- */
         const isWinter = () => settings.get('tyreSet') === 'winter';
+        const isLoad = () => settings.get('loadMode') === 'load';
         function tableTarget() {
             const set = TABLE.sets[settings.get(isWinter() ? 'winterSize' : 'summerSize')];
             if (!set) return null;
+            // prefer the chosen load case; fall back to comfort if that size has no full-load value on the placard
+            const pick = (isLoad() && set.load) ? set.load : set.comfort;
+            if (!pick) return null;
             const add = isWinter() ? Number(settings.get('winterAdd')) || 0 : 0;
-            return { F: set.frontBar + add, R: set.rearBar + add, label: set.label, from: 'tabel ' + TABLE.source.replace(/^https?:\/\//, '').split('/')[0] };
+            const loadMissing = isLoad() && !set.load;
+            return { F: pick.F + add, R: pick.R + add, label: set.label + (isLoad() ? (loadMissing ? ' · confort (fara plin in tabel)' : ' · plin') : ''), from: 'eticheta masinii' };
         }
         function carTarget(d) {
             if (!A.isNum(d.ptFL) && !A.isNum(d.ptRL)) return null;
@@ -248,7 +253,7 @@ mgu.run({
             y += 44;
             const setName = isWinter() ? 'IARNA' : 'VARA';
             cv.text('SET', tx, y + 10, 22, t.dim, { font: 'bold', spacing: 1.5 });
-            cv.text(setName + (tg && tg.label ? ' · ' + tg.label : ''), tr, y + 12, 26, isWinter() ? t.cold : t.text, { align: 'right', font: 'bold' });
+            cv.text(setName + ' · ' + (isLoad() ? 'PLIN' : 'CONFORT') + (tg && tg.label ? ' · ' + tg.label : ''), tr, y + 12, 24, isWinter() ? t.cold : t.text, { align: 'right', font: 'bold' });
             y += 38;
             cv.text('SURSA', tx, y + 10, 22, t.dim, { font: 'bold', spacing: 1.5 });
             cv.text(tg ? tg.from : '--', tr, y + 12, 22, t.dim, { align: 'right' });
