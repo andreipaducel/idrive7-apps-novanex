@@ -18,8 +18,8 @@ const { Ambient } = require('./ambient');
 
 const W = 1600, H = 520;
 
-// Illustrative colours for the 12 BMW palette slots (the real colours depend on the car - preview only).
-const SWATCH = ['#ff7a18', '#ff5a2c', '#ffd27f', '#ffffff', '#b98cff', '#6ea8ff', '#38c6ff', '#2fd27a', '#b6e03a', '#ff4fa3', '#ff2d2d', '#7a86ff'];
+// The G20 iDrive palette, slots 1..12 (1=White..8=Red as in BimmerCode; 9..12 usually unused/white).
+const SWATCH = ['#ffffff', '#c07a28', '#8a1e0c', '#1530ff', '#19e23a', '#7a3ff0', '#00b060', '#ff2424', '#d8d8d8', '#d8d8d8', '#d8d8d8', '#d8d8d8'];
 const EFFECTS = [
     ['static', 'Statica'], ['cycle', 'Ciclu culori'], ['rainbow', 'Rainbow'],
     ['breathe', 'Respiratie'], ['strobe', 'Strobe'], ['wave', 'Wave (zone)'], ['mode', 'Urmeaza modul'],
@@ -128,8 +128,11 @@ mgu.run({
         function cfg() {
             const pal = String(settings.get('palette') || '').split(',').map(Number).filter((n) => n >= 1 && n <= 12);
             const colour = Number(settings.get('colour')) || 1;
+            const sec = Number(settings.get('speed')) || 3;
             return {
-                periodMs: Math.max(400, (Number(settings.get('speed')) || 4) * 1000),
+                periodMs: Math.max(400, sec * 1000),
+                stepMs: Math.max(250, sec * 1000),
+                fade: settings.get('fade') !== false,
                 slot: colour,
                 hue: Math.round(((colour - 1) / 12) * 4095),
                 palette: pal.length ? pal : null,

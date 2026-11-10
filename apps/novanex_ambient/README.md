@@ -28,7 +28,7 @@ Asta e alegerea importantă (butonul mare din dreapta, sau Setări → „Păstr
 
 - **Statică** — o culoare fixă din paletă.
 - **Ciclu culori** — parcurge culorile alese (ex. `1,4,7`) sau toate 12. Garantat pe orice mașină.
-- **Rainbow** — parcurge spectrul. Pe „Păstrează setarea” schimbă nuanța; pe „Schimbă setarea” parcurge paleta BMW.
+- **Rainbow** — parcurge culorile alese din paleta iDrive (implicit sloturile `2,3,4,5,6,7,8`, fără alb), cu **fade** între ele. „Timp pe fiecare culoare” e în secunde. Pe „Schimbă setarea” comută sloturile (ce merge sigur pe G20); pe „Păstrează setarea” încearcă nuanța peste culoarea ținută (neverificat pe G20).
 - **Respirație** — culoarea crește și scade în intensitate (schimbă doar luminozitatea, păstrează culoarea).
 - **Strobe** — clipește; `cat sta aprins` reglează raportul.
 - **Wave (zone)** — 2–3 zone defazate (mașina pe Individual).

@@ -32,19 +32,28 @@ const checks = [
             assert(b >= 40 && b <= 180, 'bright ' + b + ' at t=' + t);
         }
     }],
-    ['rainbow hue sweeps 0..max across one period and wraps', () => {
-        const cfg = { slot: 1, periodMs: 6000 };
-        near(E.frame('rainbow', 0, cfg).hue, 0, 1, 'start');
-        near(E.frame('rainbow', 3000, cfg).hue, E.HUE_MAX / 2, 3, 'half');
-        near(E.frame('rainbow', 6000, cfg).hue, 0, 1, 'wrap');
-        for (let t = 0; t < 6000; t += 97) { const h = E.frame('rainbow', t, cfg).hue; assert(h >= 0 && h <= E.HUE_MAX, h); }
+    ['rainbow hue sweeps 0..max across one full palette loop and wraps', () => {
+        const cfg = { palette: [2, 3], stepMs: 1000 };   // 2 colours, loop = 2000 ms
+        near(E.frame('rainbow', 0, cfg).hue, 0, 2, 'start');
+        near(E.frame('rainbow', 1000, cfg).hue, E.HUE_MAX / 2, 3, 'half');
+        near(E.frame('rainbow', 2000, cfg).hue, 0, 2, 'wrap');
+        for (let t = 0; t < 2000; t += 53) { const h = E.frame('rainbow', t, cfg).hue; assert(h >= 0 && h <= E.HUE_MAX, h); }
     }],
-    ['rainbow also offers a valid palette slot for safe mode', () => {
-        const f = E.frame('rainbow', 1000, { slot: 1, periodMs: 6000 });
-        assert(f.slot >= 1 && f.slot <= 12, 'slot ' + f.slot);
+    ['rainbow fades brightness to the minimum at each colour switch', () => {
+        const cfg = { palette: [2, 3, 4], stepMs: 1000, fade: true, brightMin: 0, brightMax: 254 };
+        near(E.frame('rainbow', 0, cfg).bright, 0, 2, 'dark at switch');
+        near(E.frame('rainbow', 500, cfg).bright, 254, 2, 'bright mid-colour');
+        assert.strictEqual(E.frame('rainbow', 500, { palette: [2, 3], stepMs: 1000, fade: false }).bright, null, 'no fade -> no brightness');
     }],
-    ['cycle walks the chosen palette in order and loops', () => {
-        const cfg = { periodMs: 4000, palette: [3, 6, 9, 12] };
+    ['rainbow steps the chosen palette, one colour per stepMs', () => {
+        const cfg = { palette: [2, 3, 4], stepMs: 1000 };
+        assert.strictEqual(E.frame('rainbow', 0, cfg).slot, 2);
+        assert.strictEqual(E.frame('rainbow', 1000, cfg).slot, 3);
+        assert.strictEqual(E.frame('rainbow', 2000, cfg).slot, 4);
+        assert.strictEqual(E.frame('rainbow', 3000, cfg).slot, 2, 'loops');
+    }],
+    ['cycle walks the chosen palette in order and loops (stepMs per colour)', () => {
+        const cfg = { stepMs: 1000, palette: [3, 6, 9, 12] };
         assert.strictEqual(E.frame('cycle', 0, cfg).slot, 3);
         assert.strictEqual(E.frame('cycle', 1000, cfg).slot, 6);
         assert.strictEqual(E.frame('cycle', 2000, cfg).slot, 9);
@@ -53,7 +62,7 @@ const checks = [
     }],
     ['cycle with no palette walks all 12', () => {
         assert.strictEqual(E.palette({}).length, 12);
-        assert.strictEqual(E.frame('cycle', 0, { periodMs: 12000 }).slot, 1);
+        assert.strictEqual(E.frame('cycle', 0, { stepMs: 1000 }).slot, 1);
     }],
     ['cycle ignores out-of-range palette entries', () => {
         assert.deepStrictEqual(E.palette({ palette: [0, 3, 99, 7] }), [3, 7]);
@@ -81,10 +90,10 @@ const checks = [
         assert.ok(!E.isSafe('breathe')); assert.ok(!E.isSafe('strobe')); assert.ok(!E.isSafe('wave'));
         assert.deepStrictEqual(E.needs('breathe'), ['slot', 'bright']);
     }],
-    ['rainbow in safe mode steps real palette slots over time', () => {
-        const cfg = { slot: 1, periodMs: 1200 };
+    ['rainbow steps real palette slots over time', () => {
+        const cfg = { palette: [2, 3, 4, 5, 6], stepMs: 300 };
         const slots = new Set();
-        for (let t = 0; t < 1200; t += 100) slots.add(E.frame('rainbow', t, cfg).slot);
+        for (let t = 0; t < 1500; t += 100) slots.add(E.frame('rainbow', t, cfg).slot);
         assert(slots.size >= 4, 'rainbow barely changed slots: ' + slots.size);
     }],
     ['curves stay within 0..1', () => {

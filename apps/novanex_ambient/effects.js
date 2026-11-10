@@ -66,19 +66,31 @@ const EFFECTS = {
             return { slot: baseSlot(cfg), hue: baseHue(cfg), bright: lerpBright(cfg, k), zones: null };
         },
     },
-    // stepping the palette (safe mode, proven) or a smooth hue sweep (full mode); ambient.js picks which.
-    // Marked slot-capable so it runs in safe mode too - the frame always carries a valid palette slot.
+    // walks the palette one colour at a time (stepMs per colour), fading brightness down at each colour
+    // change so the colours cross-fade (when the car honours brightness). Also carries a hue for keep mode.
     rainbow: {
         needs: ['slot'],
         frame(t, cfg) {
-            const hue = Math.round(frac(phaseOf(t, cfg.periodMs)) * HUE_MAX) % (HUE_MAX + 1);
-            return { slot: paletteStep(cfg, phaseOf(t, cfg.periodMs)), hue, bright: null, zones: null };
+            const pal = palette(cfg), n = pal.length;
+            const step = isNum(cfg.stepMs) && cfg.stepMs > 0 ? cfg.stepMs : 2000;
+            const idx = Math.floor(t / step) % n;
+            const within = (t % step) / step;                      // 0..1 across one colour
+            const env = cfg.fade ? breatheCurve(within) : 1;        // 0 at each switch -> dark exactly when the colour changes
+            const bMax = isNum(cfg.brightMax) ? cfg.brightMax : BRIGHT_MAX;
+            const bMin = isNum(cfg.brightMin) ? cfg.brightMin : 0;
+            const bright = cfg.fade ? Math.round(bMin + (bMax - bMin) * env) : null;
+            const hue = Math.round(frac(t / (step * n)) * HUE_MAX) % (HUE_MAX + 1);
+            return { slot: pal[idx], hue, bright, zones: null };
         },
     },
     // step through chosen palette colours, one per step (period = time for the whole set)
     cycle: {
         needs: ['slot'],
-        frame(t, cfg) { return { slot: paletteStep(cfg, phaseOf(t, cfg.periodMs)), hue: null, bright: null, zones: null }; },
+        frame(t, cfg) {
+            const pal = palette(cfg), n = pal.length;
+            const step = isNum(cfg.stepMs) && cfg.stepMs > 0 ? cfg.stepMs : 2000;
+            return { slot: pal[Math.floor(t / step) % n], hue: null, bright: null, zones: null };
+        },
     },
     // blink: brightness (or colour) on/off; 'duty' is the on-fraction (default 0.5)
     strobe: {

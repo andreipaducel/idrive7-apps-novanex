@@ -154,8 +154,11 @@ class Ambient extends EventEmitter {
         const s = this.settings;
         const pal = String(s.get('palette') || '').split(',').map((x) => Number(x)).filter((n) => n >= 1 && n <= SLOTS);
         const colour = Number(s.get('colour')) || 1;
+        const sec = Number(s.get('speed')) || 3;
         return {
-            periodMs: Math.max(400, (Number(s.get('speed')) || 4) * 1000),
+            periodMs: Math.max(400, sec * 1000),       // breathe/strobe: one cycle
+            stepMs: Math.max(250, sec * 1000),         // rainbow/cycle: time on each colour
+            fade: s.get('fade') !== false,
             slot: colour,
             hue: Math.round(((colour - 1) / SLOTS) * EFX.HUE_MAX),   // the base colour as a hue, for keep mode
             palette: pal.length ? pal : null,
